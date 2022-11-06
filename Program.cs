@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 
 namespace godLANG
 {
@@ -17,37 +18,80 @@ namespace godLANG
                     return;
                 }
 
-                var lexer = new Lexer(line);
+                var parser = new Parser(line);
+                var syntaxTree = parser.Parse();
 
-                while (true)
+                var color = Console.ForegroundColor;
+                Console.ForegroundColor = ConsoleColor.DarkCyan;
+
+                PrettyPrint(syntaxTree.Root);
+
+
+                Console.ForegroundColor = color;
+
+
+
+
+                if (!syntaxTree.Diagnostics.Any())
                 {
-                    var token = lexer.NextToken();
+                    var e = new Evaluator(syntaxTree.Root);
+                    var result = e.Evaluate();
+                    Console.WriteLine(result);
+                }
 
-                    if (token.Kind == SyntaxKind.EndOfFileToken)
+                else
+                {
+                    Console.ForegroundColor = ConsoleColor.DarkRed;
+
+                    foreach (var diagnostic in syntaxTree.Diagnostics)
                     {
-                        break;
+                        Console.WriteLine(diagnostic);
                     }
 
-                    Console.Write($"{token.Kind}:  '{token.Text}'");
-
-                    if (token.Value != null)
-                    {
-                        Console.Write($" {token.Value}");
-                    }
-
-                    Console.WriteLine();
+                    Console.ForegroundColor = color;
                 }
             }
         }
-    }
 
+        static void PrettyPrint(SyntaxNode node, string indent = "", bool isLast = true)
+        {
+
+            var marker = isLast ? "└── " : "├──";
+            Console.Write(indent );
+            Console.Write(marker);
+            Console.Write(node.Kind);
+
+            if(node is SyntaxToken t && t.Value != null)
+            {
+                Console.Write(" ");
+               
+                Console.Write(t.Value);
+            }
+
+            Console.WriteLine();
+
+
+
+            indent += isLast? "    ": "|   ";
+
+            var lastChild = node.GetChildren().LastOrDefault();
+
+
+            foreach (var child in node.GetChildren())
+            {
+                PrettyPrint(child, indent, child==lastChild);
+            }
+        }
+
+
+    }
 
     enum SyntaxKind
     {
         NumberToken,
         WhitespaceToken,
         PlusToken,
-        MiusToken,
+        MinusToken,
         StarToken,
         SlashToken,
         OpenParenthesisToken,
@@ -55,10 +99,11 @@ namespace godLANG
         BadToken,
         EndOfFileToken,
         NumberExpression,
-        BinaryExpression
+        BinaryExpression,
+        ParenthesizedExpression
     }
 
-    class SyntaxToken
+    class SyntaxToken: SyntaxNode
     {
         //private int value;
 
@@ -72,22 +117,30 @@ namespace godLANG
         }
 
 
-
+        public override SyntaxKind Kind { get; }
         public int Position { get; }
         public string Text { get; }
         public object Value { get; }
-        public SyntaxKind Kind { get; }
-    }
+        
+
+        public override IEnumerable<SyntaxNode> GetChildren()
+        {
+            return Enumerable.Empty<SyntaxNode>();
+        }
+    } //
 
     class Lexer
     {
         private readonly string _text;
-        private int _position = 0;
+        private int _position;
+        private List<string> _diagnostics = new List<string>();
 
         public Lexer(string text)
         {
             _text = text;
         }
+
+        public IEnumerable<string> Diagnostics => _diagnostics;
 
         private char Current
         {
@@ -126,7 +179,12 @@ namespace godLANG
 
                 var lenght = _position - start;
                 var text = _text.Substring(start, lenght);
-                int.TryParse(text, out var value);
+                if(!int.TryParse(text, out var value))
+                {
+                    _diagnostics.Add($"The number {_text} IS NOT of type 'Int32'");
+                }
+
+
                 return new SyntaxToken(SyntaxKind.NumberToken, start, text, value);
             }
 
@@ -155,7 +213,7 @@ namespace godLANG
 
             else if (Current == '-')
             {
-                return new SyntaxToken(SyntaxKind.MiusToken, _position++, "-", null);
+                return new SyntaxToken(SyntaxKind.MinusToken, _position++, "-", null);
             }
 
             else if (Current == '*')
@@ -178,11 +236,13 @@ namespace godLANG
                 return new SyntaxToken(SyntaxKind.CloseParenthesisToken, _position++, ")", null);
             }
 
+            _diagnostics.Add($"ERROR:: bad character input: '{Current}' ");
+
             return new SyntaxToken(SyntaxKind.BadToken, _position++, _text.Substring(_position - 1, 1), null);
 
         }
 
-    }
+    } //
 
 
     abstract class SyntaxNode
@@ -192,36 +252,40 @@ namespace godLANG
             get;
         }
 
-        public 
-    }
+        public abstract IEnumerable<SyntaxNode> GetChildren(); 
+    } //
 
     abstract class ExpressionSyntax: SyntaxNode
     {
 
-    }
+    } //
 
     sealed class NumberExpressionSyntax: ExpressionSyntax
     {
-        private readonly SyntaxToken numberToken;
+       // private readonly SyntaxToken NumberToken;
 
-        public override SyntaxKind Kind => SyntaxKind.NumberExpression;
+       
 
         public NumberExpressionSyntax(SyntaxToken numberToken)
         {
-            this.numberToken = numberToken;
+            NumberToken = numberToken;
         }
 
+
+        public override SyntaxKind Kind => SyntaxKind.NumberExpression;
         public SyntaxToken NumberToken { get; }
-     
-    }
+
+
+        public override IEnumerable<SyntaxNode> GetChildren()
+        {
+            yield return NumberToken;
+        }
+
+
+    } //
 
     sealed class BinaryExpressionSyntax : ExpressionSyntax
     {
-        public override SyntaxKind Kind => SyntaxKind.BinaryExpression;
-
-        public ExpressionSyntax Left { get; }
-        public ExpressionSyntax Right { get;  }
-        public SyntaxToken OperatorToken { get;  }
 
         public BinaryExpressionSyntax(ExpressionSyntax left, SyntaxToken operatorToken, ExpressionSyntax right)
         {
@@ -229,46 +293,109 @@ namespace godLANG
             Right = right;
             OperatorToken = operatorToken;
         }
-    }
+
+        public override SyntaxKind Kind => SyntaxKind.BinaryExpression;
+
+        public ExpressionSyntax Left { get; }
+        public ExpressionSyntax Right { get; }
+        public SyntaxToken OperatorToken { get; }
+
+        
+
+        public override IEnumerable<SyntaxNode> GetChildren()
+        {
+            yield return Left;
+            yield return OperatorToken;
+            yield return Right;
+            
+        }
+    } //
+
+    sealed class ParenthesizedExpressionSyntax : ExpressionSyntax
+    { 
+
+
+        public ParenthesizedExpressionSyntax(SyntaxToken openParenthesisToken, ExpressionSyntax expression, SyntaxToken closeParenthesisToken)
+        { 
+            OpenParenthesisToken = openParenthesisToken;
+            Expression = expression;
+            CloseParenthesisToken = closeParenthesisToken;
+            // Expression = expression;
+            // CloseParenthesisToken = closeParenthesisToken;
+
+        }
+
+
+        public override SyntaxKind Kind => SyntaxKind.ParenthesizedExpression;
+        public SyntaxToken OpenParenthesisToken { get;  }
+        public ExpressionSyntax Expression { get; }
+        public SyntaxToken CloseParenthesisToken { get; }
+
+        public override IEnumerable<SyntaxNode> GetChildren()
+        {
+            yield return OpenParenthesisToken;
+            yield return Expression;
+            yield return CloseParenthesisToken; 
+        }
+
+    } //
+
+    sealed class SyntaxTree
+    {
+        public SyntaxTree(IReadOnlyList<string> diagnostics , ExpressionSyntax root, SyntaxToken endOfFileToken)
+        {
+            Diagnostics = diagnostics.ToArray();
+            Root = root;
+            EndOfFileToken = endOfFileToken;
+        }
+
+        public IReadOnlyList<string> Diagnostics { get;  }
+        public ExpressionSyntax Root { get; }
+        public SyntaxToken EndOfFileToken { get; }
+
+        public static SyntaxTree Parse(string text)
+        {
+            var parser = new Parser(text);
+            return parser.Parse();
+        }
+    } //
 
     class Parser
     {
 
         private readonly SyntaxToken[] _tokens;
+
+        private List<string> _diagnostics = new List<string>();
         private int _position;
 
         public Parser(string text)
         {
-
             var tokens = new List<SyntaxToken>();
+
             var lexer = new Lexer(text);
             SyntaxToken token;
             do
             {
                 token = lexer.NextToken();
 
-
-                if (token.Kind != SyntaxKind.WhitespaceToken && token.Kind != SyntaxKind.BadToken)
+                if (token.Kind != SyntaxKind.WhitespaceToken &&
+                    token.Kind != SyntaxKind.BadToken)
                 {
                     tokens.Add(token);
                 }
-
-
             } while (token.Kind != SyntaxKind.EndOfFileToken);
 
-
             _tokens = tokens.ToArray();
-
-
+            _diagnostics.AddRange(lexer.Diagnostics);
         }
+
+        public IEnumerable<string> Diagnostics => _diagnostics;
 
         private SyntaxToken Peek(int offset)
         {
             var index = _position + offset;
             if (index >= _tokens.Length)
-            {
                 return _tokens[_tokens.Length - 1];
-            }
 
             return _tokens[index];
         }
@@ -284,20 +411,46 @@ namespace godLANG
 
         private SyntaxToken Match(SyntaxKind kind)
         {
-            if(Current.Kind == kind)
-            { 
-                return NextToken(); 
-            }
+            if (Current.Kind == kind)
+                return NextToken();
 
-            return new SyntaxToken(kind, Current.Position,  null, null);
-
+            _diagnostics.Add($"ERROR: Unexpected token <{Current.Kind}>, expected <{kind}>");
+            return new SyntaxToken(kind, Current.Position, null, null);
         }
 
-        public ExpressionSyntax Parse()
+        private ExpressionSyntax ParseExpression()
+        {
+            return ParseTerm();
+        }
+
+        public SyntaxTree Parse()
+        {
+            var expresion = ParseTerm();
+            var endOfFileToken = Match(SyntaxKind.EndOfFileToken);
+            return new SyntaxTree(_diagnostics, expresion, endOfFileToken);
+        }
+
+        private ExpressionSyntax ParseTerm()
+        {
+            var left = ParseFactor();
+
+            while (Current.Kind == SyntaxKind.PlusToken ||
+                   Current.Kind == SyntaxKind.MinusToken)
+            {
+                var operatorToken = NextToken();
+                var right = ParseFactor();
+                left = new BinaryExpressionSyntax(left, operatorToken, right);
+            }
+
+            return left;
+        }
+
+        private ExpressionSyntax ParseFactor()
         {
             var left = ParsePrimaryExpression();
 
-            while (Current.Kind == SyntaxKind.PlusToken || Current.Kind == SyntaxKind.MiusToken)
+            while (Current.Kind == SyntaxKind.StarToken ||
+                   Current.Kind == SyntaxKind.SlashToken)
             {
                 var operatorToken = NextToken();
                 var right = ParsePrimaryExpression();
@@ -309,9 +462,81 @@ namespace godLANG
 
         private ExpressionSyntax ParsePrimaryExpression()
         {
+            if (Current.Kind == SyntaxKind.OpenParenthesisToken)
+            {
+                var left = NextToken();
+                var expression = ParseExpression();
+                var right = Match(SyntaxKind.CloseParenthesisToken);
+                return new ParenthesizedExpressionSyntax(left, expression, right);
+            }
+
             var numberToken = Match(SyntaxKind.NumberToken);
             return new NumberExpressionSyntax(numberToken);
+        } //
+    } //
+    class Evaluator
+    {
+        private readonly ExpressionSyntax _root;
+
+        public Evaluator(ExpressionSyntax root)
+        {
+            this._root = root;
         }
-    }
+
+        public int Evaluate()
+        {
+            return EvaluateExpression(_root);
+        }
+
+        private int EvaluateExpression(ExpressionSyntax node)
+        {
+            if(node is NumberExpressionSyntax n)
+            {
+                return (int) n.NumberToken.Value;
+            }
+
+            if (node is BinaryExpressionSyntax b)
+            {
+                var left = EvaluateExpression(b.Left);
+                var right = EvaluateExpression(b.Right);
+
+                if (b.OperatorToken.Kind == SyntaxKind.PlusToken)
+                {
+                    return left + right;
+                }
+
+                else if (b.OperatorToken.Kind == SyntaxKind.MinusToken)
+                {
+                    return left - right;
+                }
+                else if (b.OperatorToken.Kind == SyntaxKind.StarToken)
+                {
+                    return left * right;
+                }
+                else if (b.OperatorToken.Kind == SyntaxKind.SlashToken)
+                {
+                    return left / right;
+                }
+                else
+                {
+                    throw new Exception($"Unexpected BINARY OPERATOR {b.OperatorToken.Kind}");
+                }
+
+            }
+
+            if(node is ParenthesizedExpressionSyntax p)
+            {
+                return EvaluateExpression(p.Expression);
+
+
+            }
+
+            throw new Exception($"Unexpected NODE {node.Kind}");
+
+            
+        }
+    } //
+
+
 
 }
