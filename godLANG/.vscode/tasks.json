@@ -7,7 +7,7 @@
             "type": "process",
             "args": [
                 "build",
-                "${workspaceFolder}/ConsoleApp1.csproj",
+                "${workspaceFolder}/godLANG.csproj",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],
@@ -19,7 +19,7 @@
             "type": "process",
             "args": [
                 "publish",
-                "${workspaceFolder}/ConsoleApp1.csproj",
+                "${workspaceFolder}/godLANG.csproj",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],
@@ -33,7 +33,7 @@
                 "watch",
                 "run",
                 "--project",
-                "${workspaceFolder}/ConsoleApp1.csproj"
+                "${workspaceFolder}/godLANG.csproj"
             ],
             "problemMatcher": "$msCompile"
         }

@@ -100,7 +100,8 @@ namespace godLANG
         EndOfFileToken,
         NumberExpression,
         BinaryExpression,
-        ParenthesizedExpression
+        ParenthesizedExpression,
+        
     }
 
     class SyntaxToken: SyntaxNode
@@ -114,7 +115,9 @@ namespace godLANG
             Text = text;
             Value = value;
 
+
         }
+
 
 
         public override SyntaxKind Kind { get; }
