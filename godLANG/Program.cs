@@ -5,9 +5,9 @@ using System.Linq;
 
 namespace godLANG
 {
-    internal class Program
+    internal static class Program
     {
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
             bool showTree = false;
 
@@ -34,10 +34,10 @@ namespace godLANG
 
                 if (showTree)
                 {
-                    var color = Console.ForegroundColor;
+                    
                     Console.ForegroundColor = ConsoleColor.DarkGray;
                     PrettyPrint(syntaxTree.Root);
-                    Console.ForegroundColor = color;
+                    Console.ResetColor();
                 }
 
                 if (!syntaxTree.Diagnostics.Any())
@@ -48,13 +48,13 @@ namespace godLANG
                 }
                 else
                 {
-                    var color = Console.ForegroundColor;
+                    
                     Console.ForegroundColor = ConsoleColor.DarkRed;
 
                     foreach (var diagnostic in syntaxTree.Diagnostics)
                         Console.WriteLine(diagnostic);
 
-                    Console.ForegroundColor = color;
+                    Console.ResetColor();
                 }
             }
         }
@@ -75,7 +75,7 @@ namespace godLANG
 
             Console.WriteLine();
 
-            indent += isLast ? "    " : "│   ";
+            indent += isLast ? "   " : "│   ";
 
             var lastChild = node.GetChildren().LastOrDefault();
 
@@ -85,25 +85,28 @@ namespace godLANG
     }
 
 
-    enum SyntaxKind
+    public enum SyntaxKind
     {
-        NumberToken,
+        //Tokens
+        BadToken,
+        EndOfFileToken,
         WhitespaceToken,
+        NumberToken,
         PlusToken,
         MinusToken,
         StarToken,
         SlashToken,
         OpenParenthesisToken,
         CloseParenthesisToken,
-        BadToken,
-        EndOfFileToken,
+
+        //Expressions
         NumberExpression,
         BinaryExpression,
         ParenthesizedExpression,
 
     }
 
-    class SyntaxToken : SyntaxNode
+    public sealed class SyntaxToken : SyntaxNode
     {
         //private int value;
 
@@ -131,7 +134,7 @@ namespace godLANG
         }
     } //
 
-    class Lexer
+    internal sealed class Lexer
     {
         private readonly string _text;
         private int _position;
@@ -247,7 +250,7 @@ namespace godLANG
     } //
 
 
-    abstract class SyntaxNode
+    public abstract class SyntaxNode
     {
         public abstract SyntaxKind Kind
         {
@@ -257,38 +260,39 @@ namespace godLANG
         public abstract IEnumerable<SyntaxNode> GetChildren();
     } //
 
-    abstract class ExpressionSyntax : SyntaxNode
+    public abstract class ExpressionSyntax : SyntaxNode
     {
 
     } //
 
-    sealed class NumberExpressionSyntax : ExpressionSyntax
+    public sealed class LiteralExpressionSyntax : ExpressionSyntax
     {
         // private readonly SyntaxToken NumberToken;
 
 
 
-        public NumberExpressionSyntax(SyntaxToken numberToken)
+        public LiteralExpressionSyntax(SyntaxToken literalToken)
         {
-            NumberToken = numberToken;
+            LiteralToken = literalToken;
         }
 
 
         public override SyntaxKind Kind => SyntaxKind.NumberExpression;
-        public SyntaxToken NumberToken { get; }
+        public SyntaxToken LiteralToken { get; }
 
 
         public override IEnumerable<SyntaxNode> GetChildren()
         {
-            yield return NumberToken;
+            yield return LiteralToken;
         }
 
 
     } //
 
-    sealed class BinaryExpressionSyntax : ExpressionSyntax
+    public sealed class BinaryExpressionSyntax : ExpressionSyntax
     {
-
+        
+        
         public BinaryExpressionSyntax(ExpressionSyntax left, SyntaxToken operatorToken, ExpressionSyntax right)
         {
             Left = left;
@@ -313,7 +317,7 @@ namespace godLANG
         }
     } //
 
-    sealed class ParenthesizedExpressionSyntax : ExpressionSyntax
+    public sealed class ParenthesizedExpressionSyntax : ExpressionSyntax
     {
 
 
@@ -342,7 +346,7 @@ namespace godLANG
 
     } //
 
-    sealed class SyntaxTree
+    public sealed class SyntaxTree
     {
         public SyntaxTree(IReadOnlyList<string> diagnostics, ExpressionSyntax root, SyntaxToken endOfFileToken)
         {
@@ -362,7 +366,7 @@ namespace godLANG
         }
     } //
 
-    class Parser
+    internal sealed class Parser
     {
 
         private readonly SyntaxToken[] _tokens;
@@ -411,7 +415,7 @@ namespace godLANG
             return current;
         }
 
-        private SyntaxToken Match(SyntaxKind kind)
+        private SyntaxToken MatchToken(SyntaxKind kind)
         {
             if (Current.Kind == kind)
                 return NextToken();
@@ -420,17 +424,18 @@ namespace godLANG
             return new SyntaxToken(kind, Current.Position, null, null);
         }
 
+        public SyntaxTree Parse()
+        {
+            var expresion = ParseExpression();
+            var endOfFileToken = MatchToken(SyntaxKind.EndOfFileToken);
+            return new SyntaxTree(_diagnostics, expresion, endOfFileToken);
+        }
+
         private ExpressionSyntax ParseExpression()
         {
             return ParseTerm();
         }
 
-        public SyntaxTree Parse()
-        {
-            var expresion = ParseTerm();
-            var endOfFileToken = Match(SyntaxKind.EndOfFileToken);
-            return new SyntaxTree(_diagnostics, expresion, endOfFileToken);
-        }
 
         private ExpressionSyntax ParseTerm()
         {
@@ -468,15 +473,15 @@ namespace godLANG
             {
                 var left = NextToken();
                 var expression = ParseExpression();
-                var right = Match(SyntaxKind.CloseParenthesisToken);
+                var right = MatchToken(SyntaxKind.CloseParenthesisToken);
                 return new ParenthesizedExpressionSyntax(left, expression, right);
             }
 
-            var numberToken = Match(SyntaxKind.NumberToken);
-            return new NumberExpressionSyntax(numberToken);
+            var numberToken = MatchToken(SyntaxKind.NumberToken);
+            return new LiteralExpressionSyntax(numberToken);
         } //
     } //
-    class Evaluator
+    public sealed class Evaluator
     {
         private readonly ExpressionSyntax _root;
 
@@ -492,9 +497,9 @@ namespace godLANG
 
         private int EvaluateExpression(ExpressionSyntax node)
         {
-            if (node is NumberExpressionSyntax n)
+            if (node is LiteralExpressionSyntax n)
             {
-                return (int)n.NumberToken.Value;
+                return (int)n.LiteralToken.Value;
             }
 
             if (node is BinaryExpressionSyntax b)
