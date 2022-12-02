@@ -100,7 +100,7 @@ namespace godLANG
         CloseParenthesisToken,
 
         //Expressions
-        NumberExpression,
+        LiteralExpression,
         BinaryExpression,
         ParenthesizedExpression,
 
@@ -277,7 +277,7 @@ namespace godLANG
         }
 
 
-        public override SyntaxKind Kind => SyntaxKind.NumberExpression;
+        public override SyntaxKind Kind => SyntaxKind.LiteralExpression;
         public SyntaxToken LiteralToken { get; }
 
 
@@ -546,3 +546,4 @@ namespace godLANG
 
 }
 
+ 
