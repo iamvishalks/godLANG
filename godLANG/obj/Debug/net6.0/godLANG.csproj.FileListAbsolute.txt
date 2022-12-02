@@ -1,0 +1,15 @@
+/home/vishal/Desktop/vks-linus-base/godLANG/godLANG/bin/Debug/net6.0/godLANG
+/home/vishal/Desktop/vks-linus-base/godLANG/godLANG/bin/Debug/net6.0/godLANG.deps.json
+/home/vishal/Desktop/vks-linus-base/godLANG/godLANG/bin/Debug/net6.0/godLANG.runtimeconfig.json
+/home/vishal/Desktop/vks-linus-base/godLANG/godLANG/bin/Debug/net6.0/godLANG.dll
+/home/vishal/Desktop/vks-linus-base/godLANG/godLANG/bin/Debug/net6.0/ref/godLANG.dll
+/home/vishal/Desktop/vks-linus-base/godLANG/godLANG/bin/Debug/net6.0/godLANG.pdb
+/home/vishal/Desktop/vks-linus-base/godLANG/godLANG/obj/Debug/net6.0/godLANG.csproj.AssemblyReference.cache
+/home/vishal/Desktop/vks-linus-base/godLANG/godLANG/obj/Debug/net6.0/godLANG.GeneratedMSBuildEditorConfig.editorconfig
+/home/vishal/Desktop/vks-linus-base/godLANG/godLANG/obj/Debug/net6.0/godLANG.AssemblyInfoInputs.cache
+/home/vishal/Desktop/vks-linus-base/godLANG/godLANG/obj/Debug/net6.0/godLANG.AssemblyInfo.cs
+/home/vishal/Desktop/vks-linus-base/godLANG/godLANG/obj/Debug/net6.0/godLANG.csproj.CoreCompileInputs.cache
+/home/vishal/Desktop/vks-linus-base/godLANG/godLANG/obj/Debug/net6.0/godLANG.dll
+/home/vishal/Desktop/vks-linus-base/godLANG/godLANG/obj/Debug/net6.0/ref/godLANG.dll
+/home/vishal/Desktop/vks-linus-base/godLANG/godLANG/obj/Debug/net6.0/godLANG.pdb
+/home/vishal/Desktop/vks-linus-base/godLANG/godLANG/obj/Debug/net6.0/godLANG.genruntimeconfig.cache

@@ -5,32 +5,40 @@ using System.Linq;
 
 namespace godLANG
 {
-    internal class Program
+    internal static class Program
     {
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
+            bool showTree = false;
+
             while (true)
             {
                 Console.Write(">> ");
                 var line = Console.ReadLine();
                 if (string.IsNullOrWhiteSpace(line))
-                {
                     return;
+
+                if (line == "#showTree")
+                {
+                    showTree = !showTree;
+                    Console.WriteLine(showTree ? "Showing parse trees." : "Not showing parse trees");
+                    continue;
+                }
+                else if (line == "#cls")
+                {
+                    Console.Clear();
+                    continue;
                 }
 
-                var parser = new Parser(line);
-                var syntaxTree = parser.Parse();
+                var syntaxTree = SyntaxTree.Parse(line);
 
-                var color = Console.ForegroundColor;
-                Console.ForegroundColor = ConsoleColor.DarkCyan;
-
-                PrettyPrint(syntaxTree.Root);
-
-
-                Console.ForegroundColor = color;
-
-
-
+                if (showTree)
+                {
+                    
+                    Console.ForegroundColor = ConsoleColor.DarkGray;
+                    PrettyPrint(syntaxTree.Root);
+                    Console.ResetColor();
+                }
 
                 if (!syntaxTree.Diagnostics.Any())
                 {
@@ -38,72 +46,67 @@ namespace godLANG
                     var result = e.Evaluate();
                     Console.WriteLine(result);
                 }
-
                 else
                 {
+                    
                     Console.ForegroundColor = ConsoleColor.DarkRed;
 
                     foreach (var diagnostic in syntaxTree.Diagnostics)
-                    {
                         Console.WriteLine(diagnostic);
-                    }
 
-                    Console.ForegroundColor = color;
+                    Console.ResetColor();
                 }
             }
         }
 
         static void PrettyPrint(SyntaxNode node, string indent = "", bool isLast = true)
         {
+            var marker = isLast ? "└──" : "├──";
 
-            var marker = isLast ? "└── " : "├──";
-            Console.Write(indent );
+            Console.Write(indent);
             Console.Write(marker);
             Console.Write(node.Kind);
 
-            if(node is SyntaxToken t && t.Value != null)
+            if (node is SyntaxToken t && t.Value != null)
             {
                 Console.Write(" ");
-               
                 Console.Write(t.Value);
             }
 
             Console.WriteLine();
 
-
-
-            indent += isLast? "    ": "|   ";
+            indent += isLast ? "   " : "│   ";
 
             var lastChild = node.GetChildren().LastOrDefault();
 
-
             foreach (var child in node.GetChildren())
-            {
-                PrettyPrint(child, indent, child==lastChild);
-            }
+                PrettyPrint(child, indent, child == lastChild);
         }
-
-
     }
 
-    enum SyntaxKind
+
+    public enum SyntaxKind
     {
-        NumberToken,
+        //Tokens
+        BadToken,
+        EndOfFileToken,
         WhitespaceToken,
+        NumberToken,
         PlusToken,
         MinusToken,
         StarToken,
         SlashToken,
         OpenParenthesisToken,
         CloseParenthesisToken,
-        BadToken,
-        EndOfFileToken,
+
+        //Expressions
         NumberExpression,
         BinaryExpression,
-        ParenthesizedExpression
+        ParenthesizedExpression,
+
     }
 
-    class SyntaxToken: SyntaxNode
+    public sealed class SyntaxToken : SyntaxNode
     {
         //private int value;
 
@@ -114,14 +117,16 @@ namespace godLANG
             Text = text;
             Value = value;
 
+
         }
+
 
 
         public override SyntaxKind Kind { get; }
         public int Position { get; }
         public string Text { get; }
         public object Value { get; }
-        
+
 
         public override IEnumerable<SyntaxNode> GetChildren()
         {
@@ -129,7 +134,7 @@ namespace godLANG
         }
     } //
 
-    class Lexer
+    internal sealed class Lexer
     {
         private readonly string _text;
         private int _position;
@@ -179,7 +184,7 @@ namespace godLANG
 
                 var lenght = _position - start;
                 var text = _text.Substring(start, lenght);
-                if(!int.TryParse(text, out var value))
+                if (!int.TryParse(text, out var value))
                 {
                     _diagnostics.Add($"The number {_text} IS NOT of type 'Int32'");
                 }
@@ -245,48 +250,49 @@ namespace godLANG
     } //
 
 
-    abstract class SyntaxNode
+    public abstract class SyntaxNode
     {
         public abstract SyntaxKind Kind
         {
             get;
         }
 
-        public abstract IEnumerable<SyntaxNode> GetChildren(); 
+        public abstract IEnumerable<SyntaxNode> GetChildren();
     } //
 
-    abstract class ExpressionSyntax: SyntaxNode
+    public abstract class ExpressionSyntax : SyntaxNode
     {
 
     } //
 
-    sealed class NumberExpressionSyntax: ExpressionSyntax
+    public sealed class LiteralExpressionSyntax : ExpressionSyntax
     {
-       // private readonly SyntaxToken NumberToken;
+        // private readonly SyntaxToken NumberToken;
 
-       
 
-        public NumberExpressionSyntax(SyntaxToken numberToken)
+
+        public LiteralExpressionSyntax(SyntaxToken literalToken)
         {
-            NumberToken = numberToken;
+            LiteralToken = literalToken;
         }
 
 
         public override SyntaxKind Kind => SyntaxKind.NumberExpression;
-        public SyntaxToken NumberToken { get; }
+        public SyntaxToken LiteralToken { get; }
 
 
         public override IEnumerable<SyntaxNode> GetChildren()
         {
-            yield return NumberToken;
+            yield return LiteralToken;
         }
 
 
     } //
 
-    sealed class BinaryExpressionSyntax : ExpressionSyntax
+    public sealed class BinaryExpressionSyntax : ExpressionSyntax
     {
-
+        
+        
         public BinaryExpressionSyntax(ExpressionSyntax left, SyntaxToken operatorToken, ExpressionSyntax right)
         {
             Left = left;
@@ -300,23 +306,23 @@ namespace godLANG
         public ExpressionSyntax Right { get; }
         public SyntaxToken OperatorToken { get; }
 
-        
+
 
         public override IEnumerable<SyntaxNode> GetChildren()
         {
             yield return Left;
             yield return OperatorToken;
             yield return Right;
-            
+
         }
     } //
 
-    sealed class ParenthesizedExpressionSyntax : ExpressionSyntax
-    { 
+    public sealed class ParenthesizedExpressionSyntax : ExpressionSyntax
+    {
 
 
         public ParenthesizedExpressionSyntax(SyntaxToken openParenthesisToken, ExpressionSyntax expression, SyntaxToken closeParenthesisToken)
-        { 
+        {
             OpenParenthesisToken = openParenthesisToken;
             Expression = expression;
             CloseParenthesisToken = closeParenthesisToken;
@@ -327,7 +333,7 @@ namespace godLANG
 
 
         public override SyntaxKind Kind => SyntaxKind.ParenthesizedExpression;
-        public SyntaxToken OpenParenthesisToken { get;  }
+        public SyntaxToken OpenParenthesisToken { get; }
         public ExpressionSyntax Expression { get; }
         public SyntaxToken CloseParenthesisToken { get; }
 
@@ -335,21 +341,21 @@ namespace godLANG
         {
             yield return OpenParenthesisToken;
             yield return Expression;
-            yield return CloseParenthesisToken; 
+            yield return CloseParenthesisToken;
         }
 
     } //
 
-    sealed class SyntaxTree
+    public sealed class SyntaxTree
     {
-        public SyntaxTree(IReadOnlyList<string> diagnostics , ExpressionSyntax root, SyntaxToken endOfFileToken)
+        public SyntaxTree(IReadOnlyList<string> diagnostics, ExpressionSyntax root, SyntaxToken endOfFileToken)
         {
             Diagnostics = diagnostics.ToArray();
             Root = root;
             EndOfFileToken = endOfFileToken;
         }
 
-        public IReadOnlyList<string> Diagnostics { get;  }
+        public IReadOnlyList<string> Diagnostics { get; }
         public ExpressionSyntax Root { get; }
         public SyntaxToken EndOfFileToken { get; }
 
@@ -360,7 +366,7 @@ namespace godLANG
         }
     } //
 
-    class Parser
+    internal sealed class Parser
     {
 
         private readonly SyntaxToken[] _tokens;
@@ -409,7 +415,7 @@ namespace godLANG
             return current;
         }
 
-        private SyntaxToken Match(SyntaxKind kind)
+        private SyntaxToken MatchToken(SyntaxKind kind)
         {
             if (Current.Kind == kind)
                 return NextToken();
@@ -418,17 +424,18 @@ namespace godLANG
             return new SyntaxToken(kind, Current.Position, null, null);
         }
 
+        public SyntaxTree Parse()
+        {
+            var expresion = ParseExpression();
+            var endOfFileToken = MatchToken(SyntaxKind.EndOfFileToken);
+            return new SyntaxTree(_diagnostics, expresion, endOfFileToken);
+        }
+
         private ExpressionSyntax ParseExpression()
         {
             return ParseTerm();
         }
 
-        public SyntaxTree Parse()
-        {
-            var expresion = ParseTerm();
-            var endOfFileToken = Match(SyntaxKind.EndOfFileToken);
-            return new SyntaxTree(_diagnostics, expresion, endOfFileToken);
-        }
 
         private ExpressionSyntax ParseTerm()
         {
@@ -466,15 +473,15 @@ namespace godLANG
             {
                 var left = NextToken();
                 var expression = ParseExpression();
-                var right = Match(SyntaxKind.CloseParenthesisToken);
+                var right = MatchToken(SyntaxKind.CloseParenthesisToken);
                 return new ParenthesizedExpressionSyntax(left, expression, right);
             }
 
-            var numberToken = Match(SyntaxKind.NumberToken);
-            return new NumberExpressionSyntax(numberToken);
+            var numberToken = MatchToken(SyntaxKind.NumberToken);
+            return new LiteralExpressionSyntax(numberToken);
         } //
     } //
-    class Evaluator
+    public sealed class Evaluator
     {
         private readonly ExpressionSyntax _root;
 
@@ -490,9 +497,9 @@ namespace godLANG
 
         private int EvaluateExpression(ExpressionSyntax node)
         {
-            if(node is NumberExpressionSyntax n)
+            if (node is LiteralExpressionSyntax n)
             {
-                return (int) n.NumberToken.Value;
+                return (int)n.LiteralToken.Value;
             }
 
             if (node is BinaryExpressionSyntax b)
@@ -524,7 +531,7 @@ namespace godLANG
 
             }
 
-            if(node is ParenthesizedExpressionSyntax p)
+            if (node is ParenthesizedExpressionSyntax p)
             {
                 return EvaluateExpression(p.Expression);
 
@@ -533,10 +540,9 @@ namespace godLANG
 
             throw new Exception($"Unexpected NODE {node.Kind}");
 
-            
+
         }
-    } //
+    }
 
+}
 
-
-}///\\//\//\/\
