@@ -34,7 +34,7 @@ namespace godLANG
 
                 if (showTree)
                 {
-                    
+
                     Console.ForegroundColor = ConsoleColor.DarkGray;
                     PrettyPrint(syntaxTree.Root);
                     Console.ResetColor();
@@ -48,7 +48,7 @@ namespace godLANG
                 }
                 else
                 {
-                    
+
                     Console.ForegroundColor = ConsoleColor.DarkRed;
 
                     foreach (var diagnostic in syntaxTree.Diagnostics)
@@ -277,8 +277,8 @@ namespace godLANG
 
     public sealed class BinaryExpressionSyntax : ExpressionSyntax
     {
-        
-        
+
+
         public BinaryExpressionSyntax(ExpressionSyntax left, SyntaxToken operatorToken, ExpressionSyntax right)
         {
             Left = left;
@@ -417,41 +417,42 @@ namespace godLANG
             return new SyntaxTree(_diagnostics, expresion, endOfFileToken);
         }
 
-        private ExpressionSyntax ParseExpression()
-        {
-            return ParseTerm();
-        }
 
-
-        private ExpressionSyntax ParseTerm()
-        {
-            var left = ParseFactor();
-
-            while (Current.Kind == SyntaxKind.PlusToken ||
-                   Current.Kind == SyntaxKind.MinusToken)
-            {
-                var operatorToken = NextToken();
-                var right = ParseFactor();
-                left = new BinaryExpressionSyntax(left, operatorToken, right);
-            }
-
-            return left;
-        }
-
-        private ExpressionSyntax ParseFactor()
+        private ExpressionSyntax ParseExpression(int parentPresedence = 0)
         {
             var left = ParsePrimaryExpression();
 
-            while (Current.Kind == SyntaxKind.StarToken ||
-                   Current.Kind == SyntaxKind.SlashToken)
+            while (true)
             {
+                var presedence = GetBinaryOperatorPresedence(Current.Kind);
+                if (presedence == 0 || presedence <= parentPresedence)
+                    break;
+
                 var operatorToken = NextToken();
-                var right = ParsePrimaryExpression();
+                var right = ParseExpression(presedence);
                 left = new BinaryExpressionSyntax(left, operatorToken, right);
             }
 
             return left;
         }
+
+        private static int GetBinaryOperatorPresedence(SyntaxKind kind)
+        {
+            switch (kind)
+            {
+                case SyntaxKind.StarToken:
+                case SyntaxKind.SlashToken:
+                    return 2;
+                case SyntaxKind.PlusToken:
+                case SyntaxKind.MinusToken:
+                    return 1;
+                default:
+                    return 0;
+            }
+        }
+
+
+
 
         private ExpressionSyntax ParsePrimaryExpression()
         {
@@ -532,4 +533,3 @@ namespace godLANG
 
 }
 
- 
