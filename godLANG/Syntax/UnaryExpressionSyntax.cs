@@ -1,4 +1,4 @@
-namespace godLANG
+namespace godLANG.Syntax
 {
     //edititng on 13 dec 2022
 

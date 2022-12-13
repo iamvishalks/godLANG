@@ -1,4 +1,4 @@
-namespace godLANG
+namespace godLANG.Syntax
 {
     public sealed class SyntaxToken : SyntaxNode
     {

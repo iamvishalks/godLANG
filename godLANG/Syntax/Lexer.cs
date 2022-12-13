@@ -1,4 +1,4 @@
-namespace godLANG
+namespace godLANG.Syntax
 {
     internal sealed class Lexer
     {
