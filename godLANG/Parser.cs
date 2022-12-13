@@ -1,5 +1,7 @@
 namespace godLANG
 {
+
+
     internal sealed class Parser
     {
 
@@ -72,7 +74,7 @@ namespace godLANG
 
             while (true)
             {
-                var presedence = GetBinaryOperatorPresedence(Current.Kind);
+                var presedence = Current.Kind.GetBinaryOperatorPresedence();
                 if (presedence == 0 || presedence <= parentPresedence)
                     break;
 
@@ -83,24 +85,6 @@ namespace godLANG
 
             return left;
         }
-
-        private static int GetBinaryOperatorPresedence(SyntaxKind kind)
-        {
-            switch (kind)
-            {
-                case SyntaxKind.StarToken:
-                case SyntaxKind.SlashToken:
-                    return 2;
-                case SyntaxKind.PlusToken:
-                case SyntaxKind.MinusToken:
-                    return 1;
-                default:
-                    return 0;
-            }
-        }
-
-
-
 
         private ExpressionSyntax ParsePrimaryExpression()
         {
