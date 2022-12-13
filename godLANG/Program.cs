@@ -164,7 +164,7 @@ namespace godLANG
             _position++;
         }
 
-        public SyntaxToken NextToken()
+        public SyntaxToken Lex()
         {
 
             if (_position >= _text.Length)
@@ -211,34 +211,20 @@ namespace godLANG
             }
 
 
-            if (Current == '+')
+            switch (Current)
             {
-                return new SyntaxToken(SyntaxKind.PlusToken, _position++, "+", null);
-            }
-
-            else if (Current == '-')
-            {
-                return new SyntaxToken(SyntaxKind.MinusToken, _position++, "-", null);
-            }
-
-            else if (Current == '*')
-            {
-                return new SyntaxToken(SyntaxKind.StarToken, _position++, "*", null);
-            }
-
-            else if (Current == '/')
-            {
-                return new SyntaxToken(SyntaxKind.SlashToken, _position++, "/", null);
-            }
-
-            else if (Current == '(')
-            {
-                return new SyntaxToken(SyntaxKind.OpenParenthesisToken, _position++, "(", null);
-            }
-
-            else if (Current == ')')
-            {
-                return new SyntaxToken(SyntaxKind.CloseParenthesisToken, _position++, ")", null);
+                case '+':
+                    return new SyntaxToken(SyntaxKind.PlusToken, _position++, "+", null);
+                case '-':
+                    return new SyntaxToken(SyntaxKind.MinusToken, _position++, "-", null);
+                case '*':
+                    return new SyntaxToken(SyntaxKind.StarToken, _position++, "*", null);
+                case '/':
+                    return new SyntaxToken(SyntaxKind.SlashToken, _position++, "/", null);
+                case '(':
+                    return new SyntaxToken(SyntaxKind.OpenParenthesisToken, _position++, "(", null);
+                case ')':
+                    return new SyntaxToken(SyntaxKind.CloseParenthesisToken, _position++, ")", null);
             }
 
             _diagnostics.Add($"ERROR:: bad character input: '{Current}' ");
@@ -382,7 +368,7 @@ namespace godLANG
             SyntaxToken token;
             do
             {
-                token = lexer.NextToken();
+                token = lexer.Lex();
 
                 if (token.Kind != SyntaxKind.WhitespaceToken &&
                     token.Kind != SyntaxKind.BadToken)

@@ -13,11 +13,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/home/vishal/Desktop/vks-linus-base/godLANG/godLANG/godLANG.csproj",
+      "projectUniqueName": "/home/vishal/Desktop/godLANG/godLANG/godLANG.csproj",
       "projectName": "godLANG",
-      "projectPath": "/home/vishal/Desktop/vks-linus-base/godLANG/godLANG/godLANG.csproj",
+      "projectPath": "/home/vishal/Desktop/godLANG/godLANG/godLANG.csproj",
       "packagesPath": "/home/vishal/.nuget/packages/",
-      "outputPath": "/home/vishal/Desktop/vks-linus-base/godLANG/godLANG/obj/",
+      "outputPath": "/home/vishal/Desktop/godLANG/godLANG/obj/",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "/home/vishal/.nuget/NuGet/NuGet.Config"
@@ -58,7 +58,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "/usr/lib/dotnet/dotnet6-6.0.110/sdk/6.0.110/RuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "/usr/lib/dotnet/sdk/6.0.111/RuntimeIdentifierGraph.json"
       }
     }
   }
