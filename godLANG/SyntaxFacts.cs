@@ -2,6 +2,20 @@ namespace godLANG
 {
     internal static class SyntaxFacts
     {
+
+
+        public static int GetUnaryOperatorPrecedence(this SyntaxKind kind)
+        {
+            switch (kind)
+            {
+                case SyntaxKind.PlusToken:
+                case SyntaxKind.MinusToken:
+                    return 3;
+
+                default:
+                    return 0;
+            }
+        }
         public static int GetBinaryOperatorPresedence(this SyntaxKind kind)
         {
             switch (kind)

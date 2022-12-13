@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "/home/vishal/Desktop/godLANG/godLANG/godLANG.csproj": {}
+    "/home/vishal/Desktop/god-lang/godLANG/godLANG/godLANG.csproj": {}
   },
   "projects": {
-    "/home/vishal/Desktop/godLANG/godLANG/godLANG.csproj": {
+    "/home/vishal/Desktop/god-lang/godLANG/godLANG/godLANG.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/home/vishal/Desktop/godLANG/godLANG/godLANG.csproj",
+        "projectUniqueName": "/home/vishal/Desktop/god-lang/godLANG/godLANG/godLANG.csproj",
         "projectName": "godLANG",
-        "projectPath": "/home/vishal/Desktop/godLANG/godLANG/godLANG.csproj",
+        "projectPath": "/home/vishal/Desktop/god-lang/godLANG/godLANG/godLANG.csproj",
         "packagesPath": "/home/vishal/.nuget/packages/",
-        "outputPath": "/home/vishal/Desktop/godLANG/godLANG/obj/",
+        "outputPath": "/home/vishal/Desktop/god-lang/godLANG/godLANG/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "/home/vishal/.nuget/NuGet/NuGet.Config"

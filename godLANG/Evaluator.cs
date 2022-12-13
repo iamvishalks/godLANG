@@ -20,7 +20,23 @@ namespace godLANG
             {
                 return (int)n.LiteralToken.Value;
             }
+            if(node is UnaryExpressionSyntax u)
+            {
+                var operand = EvaluateExpression(u.Operand);
 
+                if (u.OperatorToken.Kind == SyntaxKind.PlusToken)
+                {
+                    return operand;
+                }
+                else if (u.OperatorToken.Kind == SyntaxKind.MinusToken)
+                {
+                    return -operand;
+                }
+                else
+                {
+                    throw new Exception($"Unexpected UNARY OPERATOR {u.OperatorToken.Kind}");
+                }
+            }
             if (node is BinaryExpressionSyntax b)
             {
                 var left = EvaluateExpression(b.Left);
