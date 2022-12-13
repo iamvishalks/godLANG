@@ -15,10 +15,10 @@ namespace godLANG
         CloseParenthesisToken,
 
         //Expressions
+        UnaryExpression,
         LiteralExpression,
         BinaryExpression,
         ParenthesizedExpression,
-
     }
 
 }
